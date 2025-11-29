@@ -1,0 +1,7 @@
+{
+  "name": "Gemini Ninja Slicer",
+  "description": "A motion-controlled fruit slicing game powered by your webcam and evaluated by the Gemini Sensei.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
