@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MotionGame from './components/MotionGame';
 import { GameState, SenseiFeedback } from './types';
 import { getSenseiFeedback } from './services/geminiService';
@@ -8,6 +8,23 @@ const App: React.FC = () => {
   const [stats, setStats] = useState({ score: 0, sliced: 0, bombs: 0 });
   const [senseiFeedback, setSenseiFeedback] = useState<SenseiFeedback | null>(null);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Settings State
+  const [apiKey, setApiKey] = useState('');
+  const [proxyUrl, setProxyUrl] = useState('');
+
+  useEffect(() => {
+    // Load settings from storage on mount
+    setApiKey(localStorage.getItem('gemini_api_key') || '');
+    setProxyUrl(localStorage.getItem('gemini_base_url') || '');
+  }, []);
+
+  const saveSettings = () => {
+    localStorage.setItem('gemini_api_key', apiKey.trim());
+    localStorage.setItem('gemini_base_url', proxyUrl.trim());
+    setShowSettings(false);
+  };
 
   const handleGameOver = async (score: number, sliced: number, bombs: number) => {
     setStats({ score, sliced, bombs });
@@ -20,6 +37,7 @@ const App: React.FC = () => {
       setSenseiFeedback(feedback);
     } catch (e) {
       console.error(e);
+      setSenseiFeedback({ rank: "Error", message: "Sensei disconnected." });
     } finally {
       setLoadingFeedback(false);
     }
@@ -45,6 +63,16 @@ const App: React.FC = () => {
       {/* Menu Overlay */}
       {gameState === GameState.MENU && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+          
+          {/* Settings Button */}
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="absolute top-6 left-6 p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors z-30 group"
+            title="Settings"
+          >
+            <span className="text-2xl group-hover:rotate-90 transition-transform block duration-500">⚙️</span>
+          </button>
+
           <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8 neon-text tracking-tighter italic transform -rotate-2">
             NINJA SLICER
           </h1>
@@ -57,6 +85,58 @@ const App: React.FC = () => {
           >
             START TRAINING
           </button>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/90 backdrop-blur-md">
+          <div className="bg-gray-800 p-8 rounded-2xl w-full max-w-md border border-gray-700 shadow-2xl">
+            <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
+              <span>⚙️</span> Configuration
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Gemini API Key</label>
+                <input 
+                  type="password" 
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-purple-500 focus:outline-none text-white font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">Key is stored locally in your browser.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">API Base URL (Proxy) <span className="text-xs text-gray-500">(Optional)</span></label>
+                <input 
+                  type="text" 
+                  value={proxyUrl}
+                  onChange={(e) => setProxyUrl(e.target.value)}
+                  placeholder="https://your-worker.dev"
+                  className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-purple-500 focus:outline-none text-white font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">Use this if Google APIs are blocked in your region.</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-8">
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveSettings}
+                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors shadow-lg"
+              >
+                Save
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
